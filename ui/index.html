@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+<body>
+    
+    <div id="app">
+        <div class="panel" v-show="opened">
+            <div class="panel-header">
+                <div class="panel-title">Blip Manager</div>
+                <div class="editor-toggle">
+                    <i :class="!editor ? 'bi bi-plus-square-fill' : 'bi bi-dash-square-fill'" @click="editortype = 'new'; SetEditorState(!editor)"></i>
+                </div>
+            </div>
+            
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" v-model="search" class="search-input" placeholder="Search blips...">
+                </div>
+            </div>
+            
+            <div class="blips-container">
+                <div class="blips-list">
+                    <div v-for="(item, index) in Blipselection" :key="index" class="blip-item">
+                        <div class="blip-info">
+                            <span class="blip-name">{{item.name}}</span>
+                            <i :class="jobicons[item.job] + ' blip-job-icon'" v-if="item.job !== ''"></i>
+                        </div>
+                        <div class="action-cont">
+                            <div class="blip-action" @click="Edit(item)">
+                                <i class="bi bi-pencil-fill"></i>
+                            </div>
+                            <div class="blip-action" @click="DeleteBlip(item.id)">
+                                <i class="bi bi-trash"></i>
+                            </div>
+                            <div class="blip-action" @click="TPBlip(item.coords)">
+                                <i class="bi bi-geo-alt-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="newblip" v-show="editor">
+            <div v-if="editortype === 'new'">
+                <div class="editor-header">Create New Blip</div>
+                <div class="editor-form">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-tag"></i> Blip Name
+                        </label>
+                        <input type="text" v-model="newblip.name" class="form-input" placeholder="Enter blip name">
+                    </div>
+                
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-image"></i> Blip Sprite
+                        </label>
+                        <input type="number" @change="GetSpriteImg('newblip')" v-model="newblip.sprite" class="form-input" placeholder="Enter sprite ID">
+                        <div class="sprite-preview" v-if="newblip.spirename">
+                            <span>Preview:</span>
+                            <img :src="GetSprite('newblip')" @error="GifCsere($event)" class="sprite-image">
+                            <span>{{ newblip.spirename }}</span>
+                        </div>
+                    </div>
+                
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-palette"></i> Blip Color
+                        </label>
+                        <input type="number" @change="GetBlipColor(editortype == 'edit'? 'editblip':'newblip')" v-model="newblip.colour" class="form-input" placeholder="Enter color ID">
+                        <div class="sprite-preview" v-if="newblip.colorhax">
+                            <span>Preview:</span>
+                            <div class="color-preview" :style="{ backgroundColor: newblip.colorhax }"></div>
+                            <span>{{ newblip.colorhax }}</span>
+                        </div>
+                    </div>
+                
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-person-badge"></i> Job Restriction
+                        </label>
+                        <input type="text" v-model="newblip.job" class="form-input" placeholder="Job name (leave blank for no restriction)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-arrows-fullscreen"></i> Blip Scale
+                        </label>
+                        <input type="number" min="0" max="1" step="0.1" v-model="newblip.scale" class="form-input" placeholder="Enter scale (0.0 - 1.0)">
+                    </div>
+                    
+                    <div class="radius-toggle" @click="newblip.radiusShow = !newblip.radiusShow; !newblip.radiusShow ? newblip.radius = false : newblip.radius = 0.0">
+                        <span><i class="bi bi-circle"></i> Add Radius</span>
+                        <i :class="!newblip.radiusShow ? 'bi bi-toggle-off' : 'bi bi-toggle-on'"></i>
+                    </div>
+
+                    <div class="form-group" v-show="newblip.radiusShow">
+                        <label class="form-label">
+                            <i class="bi bi-circle"></i> Radius {{newblip.radius}}
+                        </label>
+                        <input type="range" min="0" max="200" v-model="newblip.radius" class="form-input">
+                    </div>
+                    
+                    <div class="create-button" @click="CreateBlip()">
+                        <i class="bi bi-plus-circle"></i> Create Blip
+                    </div>
+                </div>
+            </div>
+            <div v-if="editortype === 'edit'">
+                <div class="editor-header">Blip Editor - {{editblip?.name}} </div>
+                <div class="editor-form">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-tag"></i> Blip Name
+                        </label>
+                        <input type="text" v-model="editblip.name" class="form-input" placeholder="Enter blip name">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-image"></i> Blip Sprite
+                        </label>
+                        <input type="number" @change="GetSpriteImg('editblip')" v-model="editblip.sprite" class="form-input" placeholder="Enter sprite ID">
+                        <div class="sprite-preview" v-if="editblip.spirename">
+                            <span>Preview:</span>
+                            <img :src="GetSprite('editblip')" @error="GifCsere($event)" class="sprite-image">
+                            <span>{{ editblip?.spirename }}</span>
+                        </div>
+                    </div>
+                
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-palette"></i> Blip Color
+                        </label>
+                        <input type="number" @change="GetBlipColor(editortype == 'edit'? 'editblip':'newblip')" v-model="editblip.colour" class="form-input" placeholder="Enter color ID">
+                        <div class="sprite-preview" v-if="editblip.colorhax">
+                            <span>Preview:</span>
+                            <div class="color-preview" :style="{ backgroundColor: editblip.colorhax }"></div>
+                            <span>{{ editblip?.colorhax }}</span>
+                        </div>
+                    </div>
+                
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-person-badge"></i> Job Restriction
+                        </label>
+                        <input type="text" v-model="editblip.job" class="form-input" placeholder="Job name (leave blank for no restriction)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-arrows-fullscreen"></i> Blip Scale
+                        </label>
+                        <input type="number" min="0" max="1" step="0.1" v-model="editblip.scale" class="form-input" placeholder="Enter scale (0.0 - 1.0)">
+                    </div>
+
+                    <div class="create-button" @click="SaveEdit()">
+                        <i class="bi bi-floppy"></i> Save Edit
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
