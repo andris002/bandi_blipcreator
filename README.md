@@ -5,4 +5,5 @@
 - Edit existing blips
 - Teleport to blips
 - Custom icons for job blips
-<img width="863" height="604" alt="image" src="https://github.com/user-attachments/assets/de0994e1-782c-42f3-8fcd-d28f4880f872" />
+<img width="848" height="591" alt="image" src="https://github.com/user-attachments/assets/2cc4b9b3-5347-4bb1-81c8-f801ce1c5703" />
+
