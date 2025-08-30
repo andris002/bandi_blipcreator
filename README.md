@@ -1,4 +1,5 @@
 # Bandi BlipCreator
+Preview: [Youtube](https://youtu.be/_JOrqOqz8w8)
 ## Features:
 - Creating blips
 - Delete existing blips
